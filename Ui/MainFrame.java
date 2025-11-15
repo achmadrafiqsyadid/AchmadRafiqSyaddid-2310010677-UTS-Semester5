@@ -68,7 +68,7 @@ public MainFrame() {
         btnExport.setText("");
         btnImport.setText(""); 
 
-        // Tambahkan Tooltip
+        // Menghapus teks dan menambah ToolTipText.
         btnTambah.setToolTipText("Tambah data baru");
         btnUbah.setToolTipText("Ubah data terpilih");
         btnHapus.setToolTipText("Hapus data terpilih");
