@@ -443,40 +443,25 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
 
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
     double jumlah; // Deklarasikan di sini
-
-    // --- MULAI BLOK VALIDASI ---
     try {
-        // 1. Ambil teks dari input
         String jumlahText = txtJumlah.getText();
         
-        // 2. Coba konversi (parse) ke angka
         jumlah = Double.parseDouble(jumlahText);
         
-    } catch (NumberFormatException e) {
-        // 3. Jika GAGAL, tampilkan pesan error yang ramah
+    } catch (NumberFormatException e) {  
         javax.swing.JOptionPane.showMessageDialog(this, 
             "Input 'Jumlah' harus berupa angka yang valid.\nContoh: 100000 (bukan '1kg' atau 'Rp 100.000')", 
             "Error Input", 
             javax.swing.JOptionPane.ERROR_MESSAGE);
-        
-        // 4. Hentikan eksekusi method (jangan lanjut ke bawah)
         return; 
     }
-    // --- SELESAI BLOK VALIDASI ---
-
-    // 5. Jika kode sampai di sini, artinya 'jumlah' sudah valid.
-    // Lanjutkan sisa logika Anda:
-    
     LocalDate tanggal;
 try {
-    // 1. Ambil java.util.Date dari JDateChooser
     java.util.Date utilDate = jDateChooser1.getDate();
     if (utilDate == null) {
-        // 2. Tampilkan error jika tanggal kosong
         javax.swing.JOptionPane.showMessageDialog(this, "Tanggal tidak boleh kosong.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
         return;
     }
-    // 3. Konversi ke LocalDate
     tanggal = utilDate.toInstant()
                        .atZone(java.time.ZoneId.systemDefault())
                        .toLocalDate();
@@ -484,26 +469,17 @@ try {
     javax.swing.JOptionPane.showMessageDialog(this, "Format tanggal tidak valid.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
     return;
 }
-
-// Ambil sisa data
 String keterangan = txtKeterangan.getText();
-// ... (sisa method 'btnTambah' Anda biarkan saja)
     String tipe = cmbTipe.getSelectedItem().toString();
-
-    // Buat objek Model
     Transaksi t = null;
     if (tipe.equals("Pemasukan")) {
         t = new Pemasukan(tanggal, keterangan, jumlah);
     } else {
         t = new Pengeluaran(tanggal, keterangan, jumlah);
     }
-    
-    // Simpan ke controller
     dataManager.tambahTransaksi(t);
-    
-    // Refresh dan bersihkan
     refreshTabel();
-    bersihForm(); // Panggil method bersihForm() Anda
+    bersihForm();
     }//GEN-LAST:event_btnTambahActionPerformed
 
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUbahActionPerformed
