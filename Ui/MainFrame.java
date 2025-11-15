@@ -52,7 +52,7 @@ public MainFrame() {
     try {
         int iconWidth = 32;  
         int iconHeight = 24; 
-   
+   //Menambahkan icon Button
         btnTambah.setIcon(getScaledIcon("/UTS/Images/ButtonTambah.jpeg", iconWidth, iconHeight));
         btnUbah.setIcon(getScaledIcon("/UTS/Images/ButtonUbah.png", iconWidth, iconHeight));
         btnHapus.setIcon(getScaledIcon("/UTS/Images/ButtonHapus.png", iconWidth, iconHeight));
