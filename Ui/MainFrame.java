@@ -49,14 +49,10 @@ public MainFrame() {
 
     // 3. Inisialisasi File Chooser (INI PERBAIKANNYA)
     fileChooser = new javax.swing.JFileChooser(); // <-- HAPUS "JFileChooser" DI DEPAN
-
-    // --- 4. KODE ICON (LENGKAP) ---
     try {
-        // Tentukan lebar dan tinggi icon
-        int iconWidth = 32;  // Ubah sesuai selera
-        int iconHeight = 24; // Ubah sesuai selera
-
-        // Panggil method 'getScaledIcon'
+        int iconWidth = 32;  
+        int iconHeight = 24; 
+   
         btnTambah.setIcon(getScaledIcon("/UTS/Images/ButtonTambah.jpeg", iconWidth, iconHeight));
         btnUbah.setIcon(getScaledIcon("/UTS/Images/ButtonUbah.png", iconWidth, iconHeight));
         btnHapus.setIcon(getScaledIcon("/UTS/Images/ButtonHapus.png", iconWidth, iconHeight));
@@ -120,9 +116,7 @@ public MainFrame() {
         tblTransaksi.clearSelection();
     }
 
-    /**
- * Method helper untuk memuat gambar DAN mengecilkannya.
- */
+//untuk method getScaledIcon
 private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) {
     try {
         java.net.URL imgUrl = getClass().getResource(path);
