@@ -17,7 +17,7 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import java.util.stream.Collectors; 
 import javax.swing.table.DefaultTableCellRenderer;
-
+/**Perubahan desain*/
 public class MainFrame extends javax.swing.JFrame {
 
     private DataManager dm;
