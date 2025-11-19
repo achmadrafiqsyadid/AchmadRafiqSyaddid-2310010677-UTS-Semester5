@@ -1,65 +1,73 @@
 # 💸 Aplikasi Keuangan Pribadi - UTS PBO 2
 
-Repositori ini berisi *source code* lengkap untuk proyek Ujian Tengah Semester (UTS) mata kuliah Pemrograman Berorientasi Objek 2 (PBO2).
+Repositori ini berisi *source code* lengkap untuk proyek **Ujian Tengah Semester (UTS)** mata kuliah **Pemrograman Berorientasi Objek 2 (PBO2)**.
+
+Aplikasi ini adalah program desktop sederhana yang berfungsi sebagai alat manajemen keuangan pribadi, dibangun menggunakan Java Swing dan dirancang dengan pondasi konsep PBO (OOP) yang kuat.
 
 **Nama:** Achmad Rafiq Syaddid
 **NPM:** 2310010677
 
-Aplikasi ini adalah program desktop sederhana untuk manajemen keuangan pribadi, yang dibangun menggunakan Java Swing dan menerapkan konsep PBO (OOP).
-
 ---
 
-## 📸 Tampilan Aplikasi
+## 📸 Tampilan Aplikasi & User Experience (UX) Versi 1 
+<img width="697" height="605" alt="image" src="https://github.com/user-attachments/assets/f05f9018-2864-464f-aeec-21bec90aa9ae" />
 
-<img width="694" height="611" alt="image" src="https://github.com/user-attachments/assets/3bc084d5-ea6e-4123-8d62-5b111e7ce9d3" />
+## 📸 Tampilan Aplikasi & User Experience (UX) Versi 2 ( Yang digunakan Sekarang )
+<img width="716" height="549" alt="image" src="https://github.com/user-attachments/assets/59652060-7a01-4996-b344-8bf605f10d25" />
 
 
-## ✨ Fitur Utama
+## ✨ Fitur Utama & Kepatuhan Kriteria UTS
 
-Aplikasi ini memenuhi semua kriteria dasar dan tantangan dari tugas:
+Aplikasi ini berhasil memenuhi semua kriteria dasar, Tantangan (20 Poin), dan kriteria inovasi dari tugas UTS:
 
-* [cite_start]**Manajemen Data (CRUD):** Kemampuan untuk **Menambah**, **Mengubah**, dan **Menghapus** data transaksi[cite: 17].
-* [cite_start]**Desain Modern:** Antarmuka pengguna (UI) yang bersih dan modern menggunakan *library* eksternal **FlatLaf** (Dark Mode)[cite: 18].
-* **Kustomisasi Ikon:** Tombol fungsional (CRUD, Ekspor, Impor) menggunakan ikon kustom yang ukurannya disesuaikan.
-* **Perhitungan Otomatis:**
-    * **Format Angka:** Semua angka di tabel dan *summary* diformat sebagai mata uang (misal: `200.000`).
-    * **Saldo Berjalan:** Tabel utama menampilkan kolom "Saldo" yang menghitung sisa uang setelah setiap transaksi.
-    * **Summary Panel:** Menampilkan total "Pemasukan," "Pengeluaran," dan "Saldo Akhir" secara *real-time*.
-* [cite_start]**Fitur Tantangan (Ekspor):** Berhasil mengekspor data ke 3 format berbeda[cite: 38]:
-    * `.pdf` (Menggunakan library iText/OpenPDF)
-    * `.xlsx` (Menggunakan library Apache POI)
-    * `.txt` (Format CSV sederhana)
-* [cite_start]**Fitur Tantangan (Impor):** Berhasil mengimpor data dari file `.txt`[cite: 38].
+### 1. Fungsionalitas Aplikasi & CRUD (20%)
+* **Manajemen Data (CRUD):** Kemampuan untuk **Menambah**, **Mengubah**, dan **Menghapus** data transaksi dengan validasi input yang memastikan integritas data.
+* **Logika Data *Robust*:** Menggunakan mekanisme *Unique ID Generation* dan *ID* transaksi tersembunyi pada tabel, memastikan proses Ubah dan Hapus selalu akurat.
+
+### 2. Tantangan: Impor & Ekspor Data (20 Poin)
+Fitur ini diimplementasikan untuk memenuhi poin Tantangan 20:
+* **Ekspor Data Komprehensif:** Berhasil mengekspor data transaksi ke **4 format** *file* berbeda, yang memudahkan pelaporan dan *backup*:
+    * `**.pdf**` (Menggunakan library **OpenPDF** untuk laporan formal).
+    * `**.xlsx**` (Menggunakan library **Apache POI** untuk analisis data di Excel).
+    * `**.txt**` (Format CSV sederhana dengan delimiter `;`).
+    * `**.csv**` (Format standar CSV dengan delimiter `,`).
+* **Impor Data:** Berhasil mengimpor data transaksi dari file `**.txt**` atau `**.csv**` dengan logika *parsing* yang mampu menangani *ID* yang hilang dan kesalahan format data.
+
+### 3. Kreativitas & Inovasi (15%)
+* **Perhitungan Saldo Berjalan (*Running Balance*):** Tabel utama menampilkan kolom "Saldo" yang menghitung sisa uang setelah setiap transaksi secara real-time dan kronologis.
+* **Visualisasi Summary *Real-Time*:** **Summary Panel** menampilkan total "Pemasukan," "Pengeluaran," dan **"Saldo Akhir"** secara *real-time*.
+* **Indikator Visual:** Saldo Akhir menggunakan indikator warna (**Merah** untuk defisit/negatif, **Biru/Hijau** untuk positif).
+* **Format Angka Profesional:** Semua nilai uang di tabel dan *summary* diformat sebagai mata uang dengan pemisah ribuan dan desimal yang konsisten.
+
+### 4. Desain dan User Experience (UX) (20%)
+* **Desain Modern:** Antarmuka pengguna (UI) yang bersih dan modern menggunakan *library* eksternal **FlatLaf** (Dark Mode) untuk estetika yang profesional.
+* **Kustomisasi Ikon:** Tombol-tombol fungsional (CRUD, Ekspor, Impor) menggunakan ikon kustom yang meningkatkan kemudahan penggunaan dan navigasi.
+
+### 5. Dokumentasi Kode (10%)
+* **Komentar Javadoc:** Setiap *class* dan *method* penting (termasuk *method helper* di `MainFrame.java` dan semua *method* bisnis di `DataManager.java`) didokumentasikan dengan komentar **Javadoc** yang informatif untuk mempermudah pemahaman dan *maintenance* kode.
 
 ---
 
 ## 🏛️ Struktur Proyek (Penerapan Konsep PBO)
 
-[cite_start]Aplikasi ini dibangun menggunakan pola desain **Model-View-Controller (MVC)** untuk memastikan penerapan konsep PBO yang baik (Abstraction, Encapsulation, Inheritance, Polymorphism)[cite: 15, 8].
+Aplikasi ini dibangun menggunakan pola desain **Model-View-Controller (MVC)** untuk memastikan pemisahan tanggung jawab (*Separation of Concerns*) dan penerapan konsep PBO yang optimal.
 
-* **`UTS.model` (Model):**
-    * Berisi kelas data yang menerapkan **Inheritance** (`Transaksi.java` [abstract], `Pemasukan.java` [extends], `Pengeluaran.java` [extends]).
-    * Menerapkan **Encapsulation** dengan atribut `private` dan *getter/setter* publik.
-
-* **`UTS.Ui` (View):**
-    * [cite_start]Berisi `MainFrame.java` yang menangani semua tampilan GUI[cite: 16].
-    * [cite_start]Semua *event handling* (logika tombol) ada di file ini[cite: 8].
-
-* **`UTS.controller` (Controller):**
-    * Berisi `DataManager.java` yang bertindak sebagai "otak" aplikasi.
-    * Menangani semua logika bisnis (CRUD, kalkulasi total, impor/ekspor data), memisahkan logika dari tampilan (prinsip **Abstraction**).
-
-* **`UTS.Images`:**
-    * Menyimpan semua aset gambar yang digunakan untuk ikon tombol.
+| Paket | Class/Tanggung Jawab | Penerapan Konsep PBO |
+| :--- | :--- | :--- |
+| **`uts.model`** | **`Transaksi`**, `Pemasukan`, `Pengeluaran` | **Inheritance** (`Pemasukan` & `Pengeluaran` *extends* `Transaksi`) dan **Polymorphism** (`getTipe()`). **Encapsulation** pada semua atribut data. |
+| **`uts.controller`** | **`DataManager`** | Menangani semua logika bisnis (CRUD, Kalkulasi, Impor/Ekspor). Mengimplementasikan prinsip **Abstraction**, memisahkan logika dari tampilan. |
+| **`uts.ui`** | **`MainFrame`** | Menangani semua tampilan GUI (**View**) dan *event handling* (logika tombol), berinteraksi dengan `DataManager`. |
+| **`uts.Images`** | Ikon-ikon tombol | Aset visual untuk UX. |
 
 ---
 
-## 🚀 Teknologi yang Digunakan
+## 🚀 Teknologi dan Dependensi
 
-* [cite_start]**Java** (dengan Java Swing untuk GUI) [cite: 16]
-* **NetBeans IDE**
-* [cite_start]**Library Eksternal:** [cite: 31]
-    * **FlatLaf:** Untuk tema dan *Look and Feel* modern.
-    * **JCalendar:** Untuk input tanggal `JDateChooser`.
-    * **Apache POI:** Untuk fungsionalitas Ekspor ke `.xlsx` (Excel).
-    * **iText 5 (atau OpenPDF):** Untuk fungsionalitas Ekspor ke `.pdf`.
+* **Platform:** **Java** (JDK 17 atau lebih tinggi).
+* **GUI Toolkit:** Java Swing.
+* **IDE:** **NetBeans IDE** (digunakan untuk *form builder*).
+* **Library Eksternal (Dependencies):**
+    * **FlatLaf:** Untuk *Look and Feel* modern.
+    * **JCalendar:** Untuk input tanggal `JDateChooser` yang intuitif.
+    * **Apache POI:** Untuk fungsionalitas Ekspor ke `**.xlsx**` (Excel).
+    * **iText 5 / OpenPDF:** Untuk fungsionalitas Ekspor ke `**.pdf**`.
