@@ -1,15 +1,10 @@
-package UTS.model;
+package uts.model;
 
 import java.time.LocalDate;
 
-// Harus 'extends Transaksi'
 public class Pemasukan extends Transaksi {
-
-    // CONSTRUCTOR ini HARUS ADA.
-    // Ini yang dicari oleh MainFrame Anda
-    public Pemasukan(LocalDate tanggal, String keterangan, double jumlah) {
-        // 'super' memanggil constructor induk (Transaksi)
-        super(tanggal, keterangan, jumlah);
+    public Pemasukan(String id, LocalDate tanggal, String keterangan, double jumlah, String kategori) {
+        super(id, tanggal, keterangan, jumlah, kategori);
     }
 
     @Override

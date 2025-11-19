@@ -1,47 +1,34 @@
-package UTS.model;
+package uts.model;
 
 import java.time.LocalDate;
 
-// Ini harus 'abstract'
 public abstract class Transaksi {
+    private final String id;
+    private final LocalDate tanggal;
+    private final String keterangan;
+    private final double jumlah;
+    private final String kategori;
 
-    // Atribut harus 'private' (Encapsulation)
-    private LocalDate tanggal;
-    private String keterangan;
-    private double jumlah;
-
-    // Ini adalah CONSTRUCTOR
-    public Transaksi(LocalDate tanggal, String keterangan, double jumlah) {
+    public Transaksi(String id, LocalDate tanggal, String keterangan, double jumlah, String kategori) {
+        this.id = id;
         this.tanggal = tanggal;
         this.keterangan = keterangan;
         this.jumlah = jumlah;
+        this.kategori = kategori;
     }
 
-    // --- Getter dan Setter ---
-    public LocalDate getTanggal() {
-        return tanggal;
-    }
+    public String getId() { return id; }
+    public LocalDate getTanggal() { return tanggal; }
+    public String getKeterangan() { return keterangan; }
+    public double getJumlah() { return jumlah; }
+    public String getKategori() { return kategori; }
 
-    public void setTanggal(LocalDate tanggal) {
-        this.tanggal = tanggal;
-    }
-
-    public String getKeterangan() {
-        return keterangan;
-    }
-
-    public void setKeterangan(String keterangan) {
-        this.keterangan = keterangan;
-    }
-
-    public double getJumlah() {
-        return jumlah;
-    }
-
-    public void setJumlah(double jumlah) {
-        this.jumlah = jumlah;
-    }
-    
-    // Method abstract untuk Polymorphism
     public abstract String getTipe();
+
+    @Override
+    public String toString() {
+        // format: tipe;id;tanggal;keterangan;jumlah;kategori
+        return String.format("%s;%s;%s;%s;%.2f;%s",
+                getTipe(), id, tanggal.toString(), keterangan.replace(";", ","), jumlah, kategori.replace(";", ","));
+    }
 }

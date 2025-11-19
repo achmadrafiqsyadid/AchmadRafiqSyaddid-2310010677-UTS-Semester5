@@ -1,236 +1,151 @@
-package UTS.Ui;
+package uts.ui;
 
-import UTS.controller.DataManager;
-import UTS.model.Pemasukan;
-import UTS.model.Pengeluaran;
-import UTS.model.Transaksi;
-import java.awt.HeadlessException;
+import uts.controller.DataManager;
+import uts.model.Transaksi;
+import javax.swing.filechooser.FileNameExtensionFilter; 
+import java.io.File; 
+import com.toedter.calendar.JDateChooser;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.Color;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import javax.swing.JFileChooser; // Pastikan import ini ada
-import javax.swing.filechooser.FileNameExtensionFilter; // Pastikan import ini ada
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.text.DecimalFormat; 
+import java.util.Optional;
+import java.util.stream.Collectors; 
+import javax.swing.table.DefaultTableCellRenderer;
 
-/**
- *
- * @author Achmad Rafiq Syaddid
- */
 public class MainFrame extends javax.swing.JFrame {
 
-    // ===========================================
-    // === DEKLARASI VARIABEL CLASS ===
-    // ===========================================
-    
-    // Variabel ini di-final karena diisi di constructor dan tidak pernah diubah
-    private final DataManager dataManager;
-    private final java.text.DecimalFormat formatter;
-    
-    // Variabel ini TIDAK final, karena diisi di constructor
-    private javax.swing.JFileChooser fileChooser; // <-- DEKLARASIKAN DI SINI
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(MainFrame.class.getName());
+    private DataManager dm;
+    private final DecimalFormat currencyFormat = new DecimalFormat("#,##0.00"); 
 
-    
-    // ===========================================
-    // === CONSTRUCTOR (SUDAH DIPERBAIKI) ===
-    // ===========================================
-    
-    // GANTI SELURUH CONSTRUCTOR LAMA ANDA DENGAN INI:
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnClear;
+    private javax.swing.JButton btnEkspor;
+    private javax.swing.JButton btnHapus;
+    private javax.swing.JButton btnImpor;
+    private javax.swing.JButton btnTambah;
+    private javax.swing.JButton btnUbah;
+    private javax.swing.ButtonGroup buttonGroupJenis;
+    private javax.swing.JComboBox<String> cbbKategori;
+    public com.toedter.calendar.JDateChooser dateChooser;
+    private javax.swing.JPanel jPanelFooter;
+    private javax.swing.JPanel jPanelInput;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JLabel lblJumlah;
+    private javax.swing.JLabel lblKategoriTitle;
+    private javax.swing.JLabel lblKeterangan;
+    private javax.swing.JLabel lblSaldoAkhir;
+    private javax.swing.JLabel lblTanggal;
+    private javax.swing.JLabel lblTotalKeluar;
+    private javax.swing.JLabel lblTotalMasuk;
+    private javax.swing.JRadioButton rbPemasukan;
+    private javax.swing.JRadioButton rbPengeluaran;
+    private javax.swing.JTable tblTransaksi;
+    private javax.swing.JTextField txtJumlah;
+    private javax.swing.JTextField txtKeterangan;
+    // End of variables declaration//GEN-END:variables
 
-public MainFrame() {
-    initComponents(); // Baris ini harus pertama
+    private DefaultTableModel tableModel;
+    private String selectedId = null; 
 
-    // 1. Inisialisasi DataManager
-    dataManager = new DataManager();
-    
-    // 2. Inisialisasi Formatter Angka
-    java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(new java.util.Locale("id", "ID"));
-    symbols.setGroupingSeparator('.');
-    formatter = new java.text.DecimalFormat("#,###", symbols);
-
-    // 3. Inisialisasi File Chooser (INI PERBAIKANNYA)
-    fileChooser = new javax.swing.JFileChooser(); // <-- HAPUS "JFileChooser" DI DEPAN
-    try {
-        int iconWidth = 32;  
-        int iconHeight = 24; 
-   //Menambahkan icon Button
-        btnTambah.setIcon(getScaledIcon("/UTS/Images/ButtonTambah.jpeg", iconWidth, iconHeight));
-        btnUbah.setIcon(getScaledIcon("/UTS/Images/ButtonUbah.png", iconWidth, iconHeight));
-        btnHapus.setIcon(getScaledIcon("/UTS/Images/ButtonHapus.png", iconWidth, iconHeight));
-        btnBersih.setIcon(getScaledIcon("/UTS/Images/ButtonBersih.jpeg", iconWidth, iconHeight));
-        btnExport.setIcon(getScaledIcon("/UTS/Images/ButtonExport.png", iconWidth, iconHeight));
-        btnImport.setIcon(getScaledIcon("/UTS/Images/ButtonImport.jpeg", iconWidth, iconHeight));
-
-        // Hapus teks tombol
-        btnTambah.setText("");
-        btnUbah.setText("");
-        btnHapus.setText("");
-        btnBersih.setText("");
-        btnExport.setText("");
-        btnImport.setText(""); 
-
-        // Menghapus teks dan menambah ToolTipText.
-        btnTambah.setToolTipText("Tambah data baru");
-        btnUbah.setToolTipText("Ubah data terpilih");
-        btnHapus.setToolTipText("Hapus data terpilih");
-        btnBersih.setToolTipText("Bersihkan form");
-        btnExport.setToolTipText("Ekspor data (PDF, XLSX, TXT)"); 
-        btnImport.setToolTipText("Impor data (.txt)");
-        
-    } catch (Exception e) {
-        System.err.println("Error memuat gambar icon: " + e.getMessage());
-        e.printStackTrace(); // Tampilkan error di console
+    public MainFrame() {
+        dm = new DataManager();
+        initComponents();
+        postInit();
+        bindDataToTable();
+        calculateTotals();
     }
-    // --- BATAS KODE ICON ---
-
-    // 5. Panggil refreshTabel() (Hanya SATU KALI di akhir)
-    refreshTabel();
-    
-} // <-- Penutup Constructor
-
-    
-    // ===========================================
-    // === METHOD HELPER (SUDAH BENAR) ===
-    // ===========================================
-    
     /**
-     * Update label Pemasukan, Pengeluaran, dan Saldo.
+         * Metode inisialisasi lanjutan yang dipanggil setelah initComponents().
+         * Bertujuan untuk mengkonfigurasi model tabel, mengatur tipe data kolom,
+         * dan mengatur kondisi awal komponen GUI.
      */
-    private void updateSummary() {
-        double totalPemasukan = dataManager.getTotalPemasukan();
-        double totalPengeluaran = dataManager.getTotalPengeluaran();
-        double saldo = dataManager.getSaldo();
-        
-        lblTotalPemasukan.setText("Pemasukan: Rp " + formatter.format(totalPemasukan));
-        lblTotalPengeluaran.setText("Pengeluaran: Rp " + formatter.format(totalPengeluaran));
-        lblSaldo.setText("Saldo Akhir: Rp " + formatter.format(saldo));
-    }
-
-    /**
-     * Membersihkan semua input di form.
-     */
-    private void bersihForm() {
-        txtKeterangan.setText("");
-        txtJumlah.setText("");
-        cmbTipe.setSelectedIndex(0);
-        jDateChooser1.setDate(null);
-        tblTransaksi.clearSelection();
-    }
-
-//untuk method getScaledIcon
-private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) {
-    try {
-        java.net.URL imgUrl = getClass().getResource(path);
-        if (imgUrl == null) {
-            System.err.println("Gagal menemukan gambar: " + path);
-            return null; 
+    private void postInit() {
+    // 1. Definisikan Kolom Tabel, masukkan "ID Transaksi" di paling depan
+    String[] columnNames = {"ID Transaksi", "Tanggal", "Keterangan", "Kategori", "Pemasukan", "Pengeluaran", "Saldo"};
+    
+    // 2. Buat model baru (Ini penting untuk menambah kolom ID dan mengatur tipe data)
+    tableModel = new DefaultTableModel(columnNames, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false; // Pastikan semua sel tidak bisa diedit
         }
-        javax.swing.ImageIcon originalIcon = new javax.swing.ImageIcon(imgUrl);
-        java.awt.Image originalImage = originalIcon.getImage();
-        java.awt.Image scaledImage = originalImage.getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH);
-        return new javax.swing.ImageIcon(scaledImage);
-    } catch (Exception e) {
-        System.err.println("Error saat scaling gambar: " + path);
-        e.printStackTrace(); // Ini akan menunjukkan error jika gambar tidak ditemukan
-        return null;
-    }
+        // Atur tipe kolom 4, 5, 6 sebagai Double untuk sorting yang benar
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 4 || columnIndex == 5 || columnIndex == 6) {
+                return Double.class;
+            }
+            return String.class;
+        }
+    };
+    tblTransaksi.setModel(tableModel);
+
+    rbPemasukan.setSelected(true);
+    // Tambahkan ini agar tanggal default hari ini
+    dateChooser.setDate(new Date()); 
+    
+    // Nonaktifkan tombol Ubah/Hapus saat form kosong
+    btnUbah.setEnabled(false);
+    btnHapus.setEnabled(false);
 }
 
-    /**
-     * Mengambil data dari DataManager dan menampilkannya di JTable.
-     */
-    private void refreshTabel() {
-        ArrayList<Transaksi> listData = dataManager.getListTransaksi();
-        javax.swing.table.DefaultTableModel model = 
-                (javax.swing.table.DefaultTableModel) tblTransaksi.getModel();
-        
-        model.setRowCount(0); // Bersihkan tabel
-
-        double saldoBerjalan = 0;
-
-        for (Transaksi t : listData) {
-            Object pemasukan = ""; 
-            Object pengeluaran = "";
-
-            if (t.getTipe().equals("Pemasukan")) {
-                pemasukan = formatter.format(t.getJumlah());
-                saldoBerjalan += t.getJumlah();
-            } else {
-                pengeluaran = formatter.format(t.getJumlah());
-                saldoBerjalan -= t.getJumlah();
-            }
-
-            Object[] row = new Object[]{
-                t.getTanggal().toString(),
-                t.getKeterangan(),
-                pemasukan,
-                pengeluaran,
-                formatter.format(saldoBerjalan) // Kolom Saldo Berjalan
-            };
-            model.addRow(row);
-        }
-        
-        updateSummary(); // Panggil update summary di akhir
-    }
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jLayeredPane1 = new javax.swing.JLayeredPane();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jDateChooser1 = new com.toedter.calendar.JDateChooser();
+        buttonGroupJenis = new javax.swing.ButtonGroup();
+        jPanelInput = new javax.swing.JPanel();
+        lblTanggal = new javax.swing.JLabel();
+        dateChooser = new com.toedter.calendar.JDateChooser();
+        lblKeterangan = new javax.swing.JLabel();
         txtKeterangan = new javax.swing.JTextField();
+        lblJumlah = new javax.swing.JLabel();
         txtJumlah = new javax.swing.JTextField();
-        cmbTipe = new javax.swing.JComboBox<>();
+        cbbKategori = new javax.swing.JComboBox<>();
+        rbPemasukan = new javax.swing.JRadioButton();
+        rbPengeluaran = new javax.swing.JRadioButton();
         btnTambah = new javax.swing.JButton();
         btnUbah = new javax.swing.JButton();
         btnHapus = new javax.swing.JButton();
-        btnBersih = new javax.swing.JButton();
-        scrollPane = new javax.swing.JScrollPane();
+        btnClear = new javax.swing.JButton();
+        lblKategoriTitle = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
         tblTransaksi = new javax.swing.JTable();
-        jPanel2 = new javax.swing.JPanel();
-        lblTotalPemasukan = new javax.swing.JLabel();
-        lblTotalPengeluaran = new javax.swing.JLabel();
-        lblSaldo = new javax.swing.JLabel();
-        btnExport = new javax.swing.JButton();
-        btnImport = new javax.swing.JButton();
-
-        javax.swing.GroupLayout jLayeredPane1Layout = new javax.swing.GroupLayout(jLayeredPane1);
-        jLayeredPane1.setLayout(jLayeredPane1Layout);
-        jLayeredPane1Layout.setHorizontalGroup(
-            jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-        );
-        jLayeredPane1Layout.setVerticalGroup(
-            jLayeredPane1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-        );
+        jPanelFooter = new javax.swing.JPanel();
+        lblTotalMasuk = new javax.swing.JLabel();
+        lblTotalKeluar = new javax.swing.JLabel();
+        lblSaldoAkhir = new javax.swing.JLabel();
+        btnEkspor = new javax.swing.JButton();
+        btnImpor = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Aplikasi Keuangan Pribadi");
 
-        jPanel1.setBackground(new java.awt.Color(255, 255, 204));
-        jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jPanelInput.setBorder(javax.swing.BorderFactory.createTitledBorder(null, "Input Transaksi", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 12))); // NOI18N
 
-        jLabel1.setText("Tanggal");
+        lblTanggal.setText("Tanggal");
 
-        jLabel2.setText("Keterangan");
+        lblKeterangan.setText("Keterangan");
 
-        jLabel3.setText("Jumlah");
+        lblJumlah.setText("Jumlah (Rp)");
 
-        jLabel4.setText("Tipe");
+        cbbKategori.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Makan & Minum", "Transportasi", "Gaji", "Belanja", "Lain-lain" }));
 
-        cmbTipe.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Pemasukan", "Pengeluaran" }));
+        buttonGroupJenis.add(rbPemasukan);
+        rbPemasukan.setSelected(true);
+        rbPemasukan.setText("Pemasukan");
 
-        btnTambah.setBackground(new java.awt.Color(204, 204, 255));
+        buttonGroupJenis.add(rbPengeluaran);
+        rbPengeluaran.setText("Pengeluaran");
+
+        btnTambah.setBackground(new java.awt.Color(0, 204, 51));
+        btnTambah.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnTambah.setForeground(new java.awt.Color(255, 255, 255));
         btnTambah.setText("Tambah");
         btnTambah.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -238,7 +153,9 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
             }
         });
 
-        btnUbah.setBackground(new java.awt.Color(204, 204, 255));
+        btnUbah.setBackground(new java.awt.Color(255, 153, 0));
+        btnUbah.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnUbah.setForeground(new java.awt.Color(255, 255, 255));
         btnUbah.setText("Ubah");
         btnUbah.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -246,7 +163,9 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
             }
         });
 
-        btnHapus.setBackground(new java.awt.Color(204, 204, 255));
+        btnHapus.setBackground(new java.awt.Color(255, 51, 51));
+        btnHapus.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        btnHapus.setForeground(new java.awt.Color(255, 255, 255));
         btnHapus.setText("Hapus");
         btnHapus.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -254,31 +173,104 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
             }
         });
 
-        btnBersih.setBackground(new java.awt.Color(204, 204, 255));
-        btnBersih.setText("Bersih");
-        btnBersih.addActionListener(new java.awt.event.ActionListener() {
+        btnClear.setText("Clear");
+        btnClear.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnBersihActionPerformed(evt);
+                btnClearActionPerformed(evt);
             }
         });
 
+        lblKategoriTitle.setText("Kategori");
+
+        javax.swing.GroupLayout jPanelInputLayout = new javax.swing.GroupLayout(jPanelInput);
+        jPanelInput.setLayout(jPanelInputLayout);
+        jPanelInputLayout.setHorizontalGroup(
+            jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelInputLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lblTanggal)
+                    .addComponent(lblKeterangan)
+                    .addComponent(lblJumlah)
+                    .addComponent(lblKategoriTitle))
+                .addGap(18, 18, 18)
+                .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelInputLayout.createSequentialGroup()
+                        .addComponent(cbbKategori, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(rbPemasukan)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(rbPengeluaran)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(txtKeterangan)
+                    .addComponent(txtJumlah)
+                    .addComponent(dateChooser, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(btnTambah, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnUbah, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnHapus, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
+        );
+        jPanelInputLayout.setVerticalGroup(
+            jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelInputLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelInputLayout.createSequentialGroup()
+                        .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lblTanggal)
+                            .addComponent(dateChooser, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(lblKeterangan)
+                            .addComponent(txtKeterangan, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(lblJumlah)
+                            .addComponent(txtJumlah, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanelInputLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(cbbKategori, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(lblKategoriTitle)
+                            .addComponent(rbPemasukan)
+                            .addComponent(rbPengeluaran)))
+                    .addGroup(jPanelInputLayout.createSequentialGroup()
+                        .addComponent(btnTambah, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnUbah, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnHapus, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         tblTransaksi.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null},
+                {null, null, null, null, null, null}
             },
             new String [] {
-                "Tanggal", "Keterangan", "Pemasukan", "Pengeluaran"
+                "Tanggal", "Keterangan", "Kategori", "Pemasukan", "Pengeluaran", "Saldo"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.Object.class, java.lang.Object.class
+                java.lang.Object.class, java.lang.String.class, java.lang.String.class, java.lang.Double.class, java.lang.Double.class, java.lang.Double.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
             }
         });
         tblTransaksi.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -286,129 +278,70 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
                 tblTransaksiMouseClicked(evt);
             }
         });
-        scrollPane.setViewportView(tblTransaksi);
+        jScrollPane1.setViewportView(tblTransaksi);
+        if (tblTransaksi.getColumnModel().getColumnCount() > 0) {
+            tblTransaksi.getColumnModel().getColumn(0).setPreferredWidth(50);
+            tblTransaksi.getColumnModel().getColumn(1).setPreferredWidth(150);
+            tblTransaksi.getColumnModel().getColumn(2).setPreferredWidth(80);
+            tblTransaksi.getColumnModel().getColumn(3).setPreferredWidth(90);
+            tblTransaksi.getColumnModel().getColumn(4).setPreferredWidth(90);
+            tblTransaksi.getColumnModel().getColumn(5).setPreferredWidth(90);
+        }
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(44, 44, 44)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel4))
+        lblTotalMasuk.setForeground(new java.awt.Color(0, 153, 51));
+        lblTotalMasuk.setText("Total Pemasukan: Rp 0");
+
+        lblTotalKeluar.setForeground(new java.awt.Color(204, 0, 0));
+        lblTotalKeluar.setText("Total Pengeluaran: Rp 0");
+
+        lblSaldoAkhir.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
+        lblSaldoAkhir.setText("Saldo: Rp 0");
+
+        btnEkspor.setText("Ekspor");
+        btnEkspor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEksporActionPerformed(evt);
+            }
+        });
+
+        btnImpor.setText("Impor");
+        btnImpor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnImporActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanelFooterLayout = new javax.swing.GroupLayout(jPanelFooter);
+        jPanelFooter.setLayout(jPanelFooterLayout);
+        jPanelFooterLayout.setHorizontalGroup(
+            jPanelFooterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelFooterLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelFooterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(lblTotalMasuk)
+                    .addComponent(lblTotalKeluar))
+                .addGap(57, 57, 57)
+                .addComponent(lblSaldoAkhir)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 202, Short.MAX_VALUE)
+                .addComponent(btnEkspor, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btnImpor, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+        );
+        jPanelFooterLayout.setVerticalGroup(
+            jPanelFooterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanelFooterLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanelFooterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanelFooterLayout.createSequentialGroup()
+                        .addGroup(jPanelFooterLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(lblTotalMasuk)
+                            .addComponent(btnEkspor, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(btnImpor, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(cmbTipe, 0, 380, Short.MAX_VALUE)
-                            .addComponent(txtJumlah, javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtKeterangan)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(15, 15, 15)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(btnHapus, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnUbah, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btnTambah, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 96, Short.MAX_VALUE)
-                            .addComponent(btnBersih, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(0, 66, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(scrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 559, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(52, 52, 52))))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(26, 26, 26)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jLabel1)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(txtKeterangan, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(txtJumlah, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(btnTambah)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnUbah)
-                        .addGap(18, 18, 18)
-                        .addComponent(btnHapus)))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel4)
-                        .addComponent(cmbTipe, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(btnBersih))
-                .addGap(18, 18, 18)
-                .addComponent(scrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(lblTotalKeluar))
+                    .addComponent(lblSaldoAkhir))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        jPanel2.setBackground(new java.awt.Color(255, 255, 204));
-        jPanel2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        lblTotalPemasukan.setText("Pemasukan");
-
-        lblTotalPengeluaran.setText("Pengeluaran");
-
-        lblSaldo.setText("Saldo Akhir");
-
-        btnExport.setBackground(new java.awt.Color(255, 255, 153));
-        btnExport.setText("Export");
-        btnExport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnExportActionPerformed(evt);
-            }
-        });
-
-        btnImport.setBackground(new java.awt.Color(255, 255, 153));
-        btnImport.setText("Import");
-        btnImport.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnImportActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(24, 24, 24)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(lblTotalPemasukan)
-                        .addGap(124, 124, 124)
-                        .addComponent(lblTotalPengeluaran)
-                        .addGap(142, 142, 142)
-                        .addComponent(lblSaldo))
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(btnExport, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(109, 109, 109)
-                        .addComponent(btnImport, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(45, Short.MAX_VALUE))
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(17, 17, 17)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblTotalPemasukan)
-                    .addComponent(lblSaldo)
-                    .addComponent(lblTotalPengeluaran))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(btnExport)
-                    .addComponent(btnImport))
-                .addContainerGap(22, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -418,330 +351,348 @@ private javax.swing.ImageIcon getScaledIcon(String path, int width, int height) 
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(17, Short.MAX_VALUE))
+                    .addComponent(jPanelInput, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jScrollPane1)
+                    .addComponent(jPanelFooter, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(53, Short.MAX_VALUE))
+                .addComponent(jPanelInput, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 250, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanelFooter, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void btnImporActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImporActionPerformed
+        JFileChooser fc = new JFileChooser();
+        // Hanya memperbolehkan file TXT atau CSV yang menggunakan semicolon (;)
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Text/CSV files (Semicolon separated)", "txt", "csv");
+        fc.setFileFilter(filter);
+
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File source = fc.getSelectedFile();
+            
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                    "Mengimpor data akan MENGHAPUS semua data yang ada saat ini. Lanjutkan?", 
+                    "Konfirmasi Import", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+            if (confirm != JOptionPane.YES_OPTION) return;
+
+            // Panggil method import (pastikan DataManager.java sudah diupdate)
+            boolean ok = dm.importFromTxt(source); 
+
+            if (ok) {
+                bindDataToTable(); 
+                calculateTotals(); 
+                clearForm();       
+                JOptionPane.showMessageDialog(this, "Import data dari " + source.getName() + " sukses.", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Import gagal. Pastikan file dalam format TXT/CSV yang benar (dipisahkan semicolon ';') dan data valid.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    
+    }//GEN-LAST:event_btnImporActionPerformed
+
     private void btnTambahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTambahActionPerformed
-    double jumlah; // Deklarasikan di sini
-    try {
-        String jumlahText = txtJumlah.getText();
-        
-        jumlah = Double.parseDouble(jumlahText);
-        
-    } catch (NumberFormatException e) {  
-        javax.swing.JOptionPane.showMessageDialog(this, 
-            "Input 'Jumlah' harus berupa angka yang valid.\nContoh: 100000 (bukan '1kg' atau 'Rp 100.000')", 
-            "Error Input", 
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-        return; 
-    }
-    LocalDate tanggal;
-try {
-    java.util.Date utilDate = jDateChooser1.getDate();
-    if (utilDate == null) {
-        javax.swing.JOptionPane.showMessageDialog(this, "Tanggal tidak boleh kosong.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    tanggal = utilDate.toInstant()
-                       .atZone(java.time.ZoneId.systemDefault())
-                       .toLocalDate();
-} catch (HeadlessException e) {
-    javax.swing.JOptionPane.showMessageDialog(this, "Format tanggal tidak valid.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
-    return;
-}
-String keterangan = txtKeterangan.getText();
-    String tipe = cmbTipe.getSelectedItem().toString();
-    Transaksi t = null;
-    if (tipe.equals("Pemasukan")) {
-        t = new Pemasukan(tanggal, keterangan, jumlah);
-    } else {
-        t = new Pengeluaran(tanggal, keterangan, jumlah);
-    }
-    dataManager.tambahTransaksi(t);
-    refreshTabel();
-    bersihForm();
+        try {
+            LocalDate tanggal = dateToLocalDate(dateChooser.getDate());
+            String keterangan = txtKeterangan.getText().trim();
+            
+            // Kode yang Benar:
+                if (txtJumlah.getText().trim().isEmpty() || keterangan.isEmpty() || tanggal == null || buttonGroupJenis.getSelection() == null) {
+                JOptionPane.showMessageDialog(this, "Pastikan Tanggal, Keterangan, Jumlah, dan Tipe sudah diisi.", "Validasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // Mengganti koma dengan titik untuk double parsing (locale-neutral)
+            double jumlah = Double.parseDouble(txtJumlah.getText().trim().replace(",", ".")); 
+            
+            String kategori;
+            if (cbbKategori.isEditable() && cbbKategori.getEditor() != null) {
+                 kategori = cbbKategori.getEditor().getItem().toString().trim();
+            } else {
+                 kategori = (String) cbbKategori.getSelectedItem();
+            }
+            if (kategori == null) kategori = ""; 
+            
+            String tipe = rbPemasukan.isSelected() ? "Pemasukan" : "Pengeluaran";
+            
+            dm.createTransaksi(tipe, tanggal, keterangan, jumlah, kategori);
+            bindDataToTable();
+            clearForm();
+            calculateTotals();
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Jumlah harus berupa angka yang valid (gunakan titik '.' sebagai desimal jika diperlukan).", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Gagal menambah transaksi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnTambahActionPerformed
 
     private void btnUbahActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUbahActionPerformed
-    int selectedRow = tblTransaksi.getSelectedRow();
-    if (selectedRow == -1) {
-        javax.swing.JOptionPane.showMessageDialog(this,
-            "Pilih data di tabel yang ingin diubah.",
-            "Error",
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-
-    double jumlah; // Deklarasikan di sini
-
-    // --- MULAI BLOK VALIDASI (SAMA SEPERTI TAMBAH) ---
-    try {
-        String jumlahText = txtJumlah.getText();
-        jumlah = Double.parseDouble(jumlahText);
-    } catch (NumberFormatException e) {
-        javax.swing.JOptionPane.showMessageDialog(this,
-            "Input 'Jumlah' harus berupa angka yang valid.",
-            "Error Input",
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    // --- SELESAI BLOK VALIDASI ---
-
-    // 2. Ambil data dari form (Kita akan perbaiki tanggal di langkah berikutnya)
-    LocalDate tanggal;
-    try {
-        // 1. Ambil java.util.Date dari JDateChooser
-        java.util.Date utilDate = jDateChooser1.getDate();
-        if (utilDate == null) {
-            // 2. Tampilkan error jika tanggal kosong
-            javax.swing.JOptionPane.showMessageDialog(this, "Tanggal tidak boleh kosong.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
+        if (selectedId == null) {
+            JOptionPane.showMessageDialog(this, "Pilih transaksi untuk diubah.", "Validasi", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        // 3. Konversi ke LocalDate
-        tanggal = utilDate.toInstant()
-                           .atZone(java.time.ZoneId.systemDefault())
-                           .toLocalDate();
-    } catch (HeadlessException e) {
-        javax.swing.JOptionPane.showMessageDialog(this, "Format tanggal tidak valid.", "Error Input", javax.swing.JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-    String keterangan = txtKeterangan.getText();
-    String tipe = cmbTipe.getSelectedItem().toString();
+        try {
+            LocalDate tanggal = dateToLocalDate(dateChooser.getDate());
+            String keterangan = txtKeterangan.getText().trim();
+            
+            if (txtJumlah.getText().trim().isEmpty() || keterangan.isEmpty() || tanggal == null) {
+                 JOptionPane.showMessageDialog(this, "Pastikan Tanggal, Keterangan, dan Jumlah sudah diisi.", "Validasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            double jumlah = Double.parseDouble(txtJumlah.getText().trim().replace(",", "."));
+            
+            String kategori;
+            if (cbbKategori.isEditable() && cbbKategori.getEditor() != null) {
+                 kategori = cbbKategori.getEditor().getItem().toString().trim();
+            } else {
+                 kategori = (String) cbbKategori.getSelectedItem();
+            }
+            if (kategori == null) kategori = ""; 
 
-    // 3. Buat objek Model
-    Transaksi t = null;
-    if (tipe.equals("Pemasukan")) {
-        t = new Pemasukan(tanggal, keterangan, jumlah);
-    } else {
-        t = new Pengeluaran(tanggal, keterangan, jumlah);
-    }
-
-    // 4. Panggil method ubahTransaksi (Ini sudah benar)
-    dataManager.ubahTransaksi(selectedRow, t);
-
-    // 5. Segarkan tabel dan bersihkan form
-    refreshTabel();
-    bersihForm();
+            dm.updateTransaksi(selectedId, tanggal, keterangan, jumlah, kategori);
+            bindDataToTable();
+            clearForm();
+            calculateTotals();
+            selectedId = null;
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Jumlah harus berupa angka yang valid (gunakan titik '.' sebagai desimal jika diperlukan).", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Gagal mengubah transaksi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnUbahActionPerformed
 
-    private void btnBersihActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBersihActionPerformed
-  bersihForm();
-    }//GEN-LAST:event_btnBersihActionPerformed
-
     private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
-    int selectedRow = tblTransaksi.getSelectedRow();
-     if (selectedRow == -1) {
-        javax.swing.JOptionPane.showMessageDialog(this, 
-            "Pilih data di tabel yang ingin dihapus.", 
-            "Error", 
-            javax.swing.JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-     int konfirmasi = javax.swing.JOptionPane.showConfirmDialog(this, 
-        "Apakah Anda yakin ingin menghapus data ini?", 
-        "Konfirmasi Hapus", 
-        javax.swing.JOptionPane.YES_NO_OPTION);
-    
-    if (konfirmasi == javax.swing.JOptionPane.YES_OPTION) {       
-        dataManager.hapusTransaksi(selectedRow); 
-        refreshTabel();
-        bersihForm();
+        if (selectedId == null) {
+            JOptionPane.showMessageDialog(this, "Pilih transaksi yang ingin dihapus.", "Validasi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(this, "Yakin ingin menghapus transaksi ini?", "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            dm.deleteTransaksi(selectedId);
+            bindDataToTable();
+            calculateTotals();
+            clearForm();
+            selectedId = null;
         }
     }//GEN-LAST:event_btnHapusActionPerformed
 
+    private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+      clearForm();    
+    }//GEN-LAST:event_btnClearActionPerformed
+
     private void tblTransaksiMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblTransaksiMouseClicked
-    int selectedRow = tblTransaksi.getSelectedRow();
-    
-    if (selectedRow != -1) {
-        // JANGAN AMBIL DATA DARI TABEL (karena sudah diformat "50.000")
-        // AMBIL DATA ASLI DARI CONTROLLER
-        Transaksi t = dataManager.getListTransaksi().get(selectedRow);
+        int row = tblTransaksi.getSelectedRow();
+        if (row < 0) return;
+        int modelRow = tblTransaksi.convertRowIndexToModel(row);
 
-        // Set data ke form
-        txtKeterangan.setText(t.getKeterangan());
-        
-        // Ambil jumlah ASLI (double), bukan string "50.000"
-        txtJumlah.setText(String.valueOf(t.getJumlah())); 
-        
-        // Set tipe ComboBox
-        cmbTipe.setSelectedItem(t.getTipe());
+        // Ambil ID Transaksi langsung dari kolom pertama (Kolom 0)
+        String idTransaksi = tableModel.getValueAt(modelRow, 0).toString();
 
-        // Set tanggal ke JDateChooser
-        try {
-            String tanggalStr = t.getTanggal().toString();
-            java.util.Date date = new java.text.SimpleDateFormat("yyyy-MM-dd").parse(tanggalStr);
-            jDateChooser1.setDate(date);
-        } catch (java.text.ParseException e) {
-            logger.log(java.util.logging.Level.SEVERE, "Gagal parse tanggal dari tabel", e);
+        Optional<Transaksi> found = dm.getTransaksiList().stream()
+                .filter(t -> t.getId().equals(idTransaksi))
+                .findFirst();
+
+        if (found.isPresent()) {
+            Transaksi t = found.get();
+            selectedId = t.getId();
+
+            dateChooser.setDate(localDateToDate(t.getTanggal()));
+            txtKeterangan.setText(t.getKeterangan());
+
+            // Tampilkan jumlah mentah (String.valueOf) untuk input
+            txtJumlah.setText(String.valueOf(t.getJumlah()));
+
+            if (t.getTipe().equalsIgnoreCase("Pemasukan")) {
+                rbPemasukan.setSelected(true);
+            } else {
+                rbPengeluaran.setSelected(true);
+            }
+
+            // Set Kategori
+            cbbKategori.setSelectedItem(t.getKategori());
+            if (cbbKategori.getSelectedItem() == null && cbbKategori.isEditable()) {
+                 cbbKategori.getEditor().setItem(t.getKategori());
+            }
+
+            // Aktifkan tombol Ubah/Hapus dan nonaktifkan Tambah
+            btnTambah.setEnabled(false); 
+            btnUbah.setEnabled(true);
+            btnHapus.setEnabled(true);
         }
-    }
-
     }//GEN-LAST:event_tblTransaksiMouseClicked
 
-    private void btnExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExportActionPerformed
-    JFileChooser chooser = new JFileChooser();
-    
-    // Siapkan semua filter
-    FileNameExtensionFilter txtFilter = new FileNameExtensionFilter(
-            "Text file (*.txt)", "txt");
-    
-    // --- INI PERUBAHANNYA ---
-    FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter( // Ganti nama variabel
-            "Modern Excel file (*.xlsx)", "xlsx"); // Ganti ke .xlsx
-    // --- BATAS PERUBAHAN ---
-    
-    FileNameExtensionFilter pdfFilter = new FileNameExtensionFilter(
-            "PDF file (*.pdf)", "pdf");
-    
-    // Tambahkan filter
-    chooser.addChoosableFileFilter(txtFilter);
-    chooser.addChoosableFileFilter(xlsxFilter); // Tambahkan filter .xlsx
-    chooser.addChoosableFileFilter(pdfFilter);
-    
-    // Set filter default ke .xlsx
-    chooser.setFileFilter(xlsxFilter); // Ganti default ke .xlsx
-    
-    int userSelection = chooser.showSaveDialog(this);
+    private void btnEksporActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEksporActionPerformed
+        String[] options = {"PDF", "XLSX", "TXT", "CSV", "Batal"};
+        int choose = JOptionPane.showOptionDialog(this, "Pilih format export", "Export Data",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
+                null, options, options[0]);
+        if (choose == 4 || choose == JOptionPane.CLOSED_OPTION) return;
 
-    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
-        java.io.File fileToSave = chooser.getSelectedFile();
+        JFileChooser fc = new JFileChooser();
+        String ext = options[choose].toLowerCase();
         
-        FileNameExtensionFilter selectedFilter = (FileNameExtensionFilter) chooser.getFileFilter();
-        String selectedExtension = selectedFilter.getExtensions()[0];
+        fc.setSelectedFile(new File("Laporan_Keuangan." + ext));
+        if (fc.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File target = fc.getSelectedFile();
         
-        // Pastikan ekstensi benar
-        if (!fileToSave.getPath().endsWith("." + selectedExtension)) {
-            fileToSave = new java.io.File(fileToSave.getPath() + "." + selectedExtension);
+        // Menambahkan ekstensi jika user lupa mengetiknya
+        String targetPath = target.getAbsolutePath();
+        if (!targetPath.toLowerCase().endsWith("." + ext)) {
+             target = new File(targetPath + "." + ext);
+        }
+
+        boolean ok = false;
+        String formatName = options[choose];
+        
+        // Pastikan DataManager memiliki method export ini (seperti di jawaban sebelumnya)
+        if (choose == 0) ok = dm.exportToPdf(target);
+        else if (choose == 1) ok = dm.exportToExcel(target);
+        else if (choose == 2) ok = dm.exportToTxt(target);
+        else if (choose == 3) ok = dm.exportToCsv(target);
+
+        if (ok) JOptionPane.showMessageDialog(this, "Export ke " + formatName + " sukses: " + target.getAbsolutePath(), "Sukses", JOptionPane.INFORMATION_MESSAGE);
+        else JOptionPane.showMessageDialog(this, "Export ke " + formatName + " gagal. Pastikan semua library (OpenPDF, Apache POI) sudah terpasang.", "Error", JOptionPane.ERROR_MESSAGE);
+    }//GEN-LAST:event_btnEksporActionPerformed
+    /**
+     * Memuat (binding) data transaksi dari DataManager ke JTable.
+     * Metode ini menghitung saldo berjalan dan menerapkan renderer mata uang.
+     * ID Transaksi (Kolom 0) disembunyikan.
+     */
+    private void bindDataToTable() {
+    tableModel.setRowCount(0);
+    List<Transaksi> list = dm.getTransaksiList();
+    double running = 0.0;
+
+    for (Transaksi t : list) {
+        double pemasukan = 0.0;
+        double pengeluaran = 0.0;
+        
+        if ("Pemasukan".equalsIgnoreCase(t.getTipe())) {
+            pemasukan = t.getJumlah();
+            running += pemasukan;
+        } else {
+            pengeluaran = t.getJumlah();
+            running -= pengeluaran;
         }
         
-        try {
-            // Panggil method yang sesuai
-            switch (selectedExtension) {
-                case "txt" -> dataManager.exportData(fileToSave);
-                // --- INI PERUBAHANNYA ---
-                case "xlsx" -> dataManager.exportDataToXLSX(fileToSave, this.formatter);
-                // --- BATAS PERUBAHAN ---
-                // Panggil method XLSX baru
-                case "pdf" -> dataManager.exportDataToPDF(fileToSave, this.formatter);
-                default -> {
-                }
-            }
-            
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Data berhasil diekspor ke format ." + selectedExtension,
-                    "Ekspor Berhasil",
-                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
-                    
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Gagal mengekspor file: " + e.getMessage(),
-                    "Error Ekspor",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-        }
+        // Kolom: ID Transaksi (0) | Tanggal (1) | Keterangan (2) | Kategori (3) | Pemasukan (4) | Pengeluaran (5) | Saldo Berjalan (6)
+        tableModel.addRow(new Object[]{
+                t.getId(), // ID Transaksi
+                t.getTanggal().toString(),
+                t.getKeterangan(),
+                t.getKategori(),
+                pemasukan, // Jumlah mentah (Double)
+                pengeluaran, // Jumlah mentah (Double)
+                running // Jumlah mentah (Double)
+        });
     }
-
-    }//GEN-LAST:event_btnExportActionPerformed
-
-    private void btnImportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImportActionPerformed
-    JFileChooser chooser = new JFileChooser();
     
-    // 2. Buat filter HANYA UNTUK .txt
-    FileNameExtensionFilter txtFilter = new FileNameExtensionFilter(
-            "Text file (*.txt)", "txt");
+    // ** KONFIGURASI TABEL (Harus dilakukan setelah model diisi) **
     
-    chooser.addChoosableFileFilter(txtFilter);
-    chooser.setFileFilter(txtFilter); // Set .txt sebagai default
-    
-    // 3. Tampilkan dialog "Open"
-    int userSelection = chooser.showOpenDialog(this);
-    
-    if (userSelection == javax.swing.JFileChooser.APPROVE_OPTION) {
-        java.io.File fileToOpen = chooser.getSelectedFile();
-        
-        try {
-            // 4. Panggil method import .txt Anda di DataManager
-            dataManager.importData(fileToOpen);
-            
-            // 5. SANGAT PENTING: Refresh tabel setelah data baru masuk
-            refreshTabel(); 
-            
-            javax.swing.JOptionPane.showMessageDialog(this, 
-                "Data berhasil diimpor dari:\n" + fileToOpen.getAbsolutePath(), 
-                "Impor Berhasil", 
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
-                
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, 
-                "Gagal membaca file: " + e.getMessage() + "\nPastikan format file .txt sudah benar.", 
-                "Error Impor", 
-                javax.swing.JOptionPane.ERROR_MESSAGE);
-            // Tampilkan error di console
-        }
+    // 1. Sembunyikan kolom ID Transaksi (Kolom 0)
+    if (tblTransaksi.getColumnModel().getColumnCount() > 0) {
+        tblTransaksi.getColumnModel().getColumn(0).setMinWidth(0);
+        tblTransaksi.getColumnModel().getColumn(0).setMaxWidth(0);
+        tblTransaksi.getColumnModel().getColumn(0).setWidth(0);
     }
+    
+    // 2. Terapkan CurrencyRenderer pada kolom Pemasukan (4), Pengeluaran (5), dan Saldo (6)
+    tblTransaksi.getColumnModel().getColumn(4).setCellRenderer(new CurrencyRenderer(currencyFormat));
+    tblTransaksi.getColumnModel().getColumn(5).setCellRenderer(new CurrencyRenderer(currencyFormat));
+    tblTransaksi.getColumnModel().getColumn(6).setCellRenderer(new CurrencyRenderer(currencyFormat));
 
-    }//GEN-LAST:event_btnImportActionPerformed
+    calculateTotals();
+}
+
+    private void clearForm() {
+        dateChooser.setDate(new Date()); // Set ke tanggal hari ini
+        txtKeterangan.setText("");
+        txtJumlah.setText("");
+
+        // Clear ComboBox Kategori
+        if (cbbKategori.isEditable() && cbbKategori.getEditor() != null) cbbKategori.getEditor().setItem("");
+        else cbbKategori.setSelectedIndex(0);
+
+        rbPemasukan.setSelected(true);
+        selectedId = null;
+        tblTransaksi.clearSelection();
+
+        // Reset status tombol
+        btnTambah.setEnabled(true);
+        btnUbah.setEnabled(false);
+        btnHapus.setEnabled(false);
+    }
+    
+    /**
+     * Menghitung total pemasukan, total pengeluaran, dan saldo akhir
+     * dari seluruh transaksi, lalu menampilkannya di footer.
+     * Juga mengatur warna saldo (Merah jika minus, Biru jika positif).
+     */
+    private void calculateTotals() {
+        double masuk = 0, keluar = 0;
+        for (Transaksi t : dm.getTransaksiList()) {
+            if ("Pemasukan".equalsIgnoreCase(t.getTipe())) masuk += t.getJumlah();
+            else keluar += t.getJumlah();
+        }
+        
+        double saldo = masuk - keluar;
+        
+        lblTotalMasuk.setText("Total Pemasukan: Rp " + currencyFormat.format(masuk));
+        lblTotalKeluar.setText("Total Pengeluaran: Rp " + currencyFormat.format(keluar));
+        lblSaldoAkhir.setText("Saldo: Rp " + currencyFormat.format(saldo));
+        
+        // Beri warna pada Saldo
+        if (saldo < 0) lblSaldoAkhir.setForeground(Color.RED);
+        else lblSaldoAkhir.setForeground(Color.BLUE); // Atau Color.BLACK/Green
+    }
+    
+    /**
+     * Mengubah objek java.util.Date menjadi java.time.LocalDate.
+     * @param d Objek Date yang akan dikonversi.
+     * @return Objek LocalDate, atau null jika input null.
+     */
+    private LocalDate dateToLocalDate(Date d) {
+        if (d == null) return null; 
+        return Instant.ofEpochMilli(d.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+    }
 
     /**
-     * @param args the command line arguments
+     * Mengubah objek java.time.LocalDate menjadi java.util.Date.
+     * @param ld Objek LocalDate yang akan dikonversi.
+     * @return Objek Date, atau null jika input null.
      */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new MainFrame().setVisible(true));
+    private Date localDateToDate(LocalDate ld) {
+        if (ld == null) return null;
+        return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
+    /**
+ * Custom Cell Renderer untuk memformat nilai Double menjadi mata uang di JTable
+ */
+    private class CurrencyRenderer extends DefaultTableCellRenderer {
+        private final DecimalFormat formatter;
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnBersih;
-    private javax.swing.JButton btnExport;
-    private javax.swing.JButton btnHapus;
-    private javax.swing.JButton btnImport;
-    private javax.swing.JButton btnTambah;
-    private javax.swing.JButton btnUbah;
-    private javax.swing.JComboBox<String> cmbTipe;
-    private com.toedter.calendar.JDateChooser jDateChooser1;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLayeredPane jLayeredPane1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JLabel lblSaldo;
-    private javax.swing.JLabel lblTotalPemasukan;
-    private javax.swing.JLabel lblTotalPengeluaran;
-    private javax.swing.JScrollPane scrollPane;
-    private javax.swing.JTable tblTransaksi;
-    private javax.swing.JTextField txtJumlah;
-    private javax.swing.JTextField txtKeterangan;
-    // End of variables declaration//GEN-END:variables
+        public CurrencyRenderer(DecimalFormat formatter) {
+            this.formatter = formatter;
+            setHorizontalAlignment(RIGHT); // Rata kanan
+        }
+
+        @Override
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            if (value instanceof Double) {
+                value = formatter.format(value);
+            }
+            return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        }
+    }
 }

@@ -1,206 +1,308 @@
-package UTS.controller;
+package uts.controller;
 
-// --- IMPORT MODEL ---
-import UTS.model.Pemasukan;
-import UTS.model.Pengeluaran;
-import UTS.model.Transaksi;
+import uts.model.Transaksi;
+import uts.model.Pemasukan;
+import uts.model.Pengeluaran;
 
-// --- IMPORT JAVA UTILS ---
+import java.io.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.ArrayList; 
+import java.util.Comparator;
+import java.util.List; 
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.text.DecimalFormat;
 
-// --- IMPORT JAVA I/O (UNTUK TXT, XLS, PDF) ---
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+// Import untuk PDF (memerlukan OpenPDF library)
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 
-// --- IMPORT JAVA TEXT (UNTUK FORMATTER) ---
-import java.text.DecimalFormat; 
-
-// --- IMPORT APACHE POI (EXCEL) ---
-import org.apache.poi.xssf.usermodel.XSSFWorkbook; // <-- INI ADALAH PERBAIKANNYA
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
+// Apache POI imports for Excel export (memerlukan Apache POI library)
 import org.apache.poi.ss.usermodel.Workbook;
-
-// --- IMPORT OPENPDF / ITEXT 5 (PDF) ---
-import com.itextpdf.text.Document;
-import com.itextpdf.text.PageSize;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
-
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class DataManager {
-    
-    private final ArrayList<Transaksi> listTransaksi;
+    private final List<Transaksi> transaksiList = new ArrayList<>(); 
 
     public DataManager() {
-        listTransaksi = new ArrayList<>();
-    }
-    
-    // ===========================================
-    // === METODE DASAR (CRUD) ===
-    // ===========================================
-    
-    public void tambahTransaksi(Transaksi t) {
-        this.listTransaksi.add(t);
+        // Konstruktor kosong
     }
 
-    public void ubahTransaksi(int index, Transaksi t) {
-        if (index >= 0 && index < listTransaksi.size()) {
-            this.listTransaksi.set(index, t);
-        }
+    // --- 1. Metode CRUD Dasar ---
+
+    public List<Transaksi> getTransaksiList() {
+        return transaksiList.stream()
+                .sorted(Comparator.comparing(Transaksi::getTanggal).thenComparing(Transaksi::getId))
+                .collect(Collectors.toList());
     }
 
-    public void hapusTransaksi(int index) {
-        if (index >= 0 && index < listTransaksi.size()) {
-            this.listTransaksi.remove(index);
-        }
-    }
-    
-    public ArrayList<Transaksi> getListTransaksi() {
-        return this.listTransaksi;
-    }
-    
-    // ===========================================
-    // === METODE KALKULASI (SUMMARY) ===
-    // ===========================================
-
-    public double getTotalPemasukan() {
-        double total = 0;
-        for (Transaksi t : listTransaksi) {
-            if (t instanceof Pemasukan) {
-                total += t.getJumlah();
-            }
-        }
-        return total;
+    public Transaksi createTransaksi(String tipe, LocalDate tanggal, String keterangan, double jumlah, String kategori) {
+        String id = generateNextIdForDate(tanggal);
+        Transaksi t = tipe.equalsIgnoreCase("Pemasukan")
+                ? new Pemasukan(id, tanggal, keterangan, jumlah, kategori)
+                : new Pengeluaran(id, tanggal, keterangan, jumlah, kategori);
+        transaksiList.add(t);
+        return t;
     }
 
-    public double getTotalPengeluaran() {
-        double total = 0;
-        for (Transaksi t : listTransaksi) {
-            if (t instanceof Pengeluaran) {
-                total += t.getJumlah();
-            }
-        }
-        return total;
-    }
-
-    public double getSaldo() {
-        return getTotalPemasukan() - getTotalPengeluaran();
-    }
-    /**
-     * Ekspor ke .txt (Biarkan apa adanya, .txt harus berisi data mentah)
-     * @param file
-     * @throws java.io.IOException
-     */
-    public void exportData(File file) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (Transaksi t : listTransaksi) {
-                String tipe = t.getTipe().toUpperCase();
-                String tanggal = t.getTanggal().toString();
-                String keterangan = t.getKeterangan();
-                String jumlah = String.valueOf(t.getJumlah()); // Data mentah
-                
-                String line = tipe + "," + tanggal + "," + keterangan + "," + jumlah;
-                writer.write(line);
-                writer.newLine();
-            }
-        }
-    }
-    
-    /**
-     * (DIUBAH) Menyimpan data ke file Excel (.xlsx) modern
-     * @param file File tujuan.
-     * @param formatter
-     * @throws java.io.IOException
-     */
-    public void exportDataToXLSX(File file, java.text.DecimalFormat formatter) throws IOException {
-        
-        try (Workbook workbook = new XSSFWorkbook() // <-- Menggunakan XSSF (modern)
-) {
-            Sheet sheet = workbook.createSheet("Data Transaksi");
-            String[] headers = {"Tanggal", "Keterangan", "Tipe", "Jumlah"};
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-            }
-            int rowNum = 1;
-            for (Transaksi t : listTransaksi) {
-                Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(t.getTanggal().toString());
-                row.createCell(1).setCellValue(t.getKeterangan());
-                row.createCell(2).setCellValue(t.getTipe());
-                row.createCell(3).setCellValue(formatter.format(t.getJumlah())); // Format angka
-            }
-            try (FileOutputStream fileOut = new FileOutputStream(file)) {
-                workbook.write(fileOut);
+    public void updateTransaksi(String oldId, LocalDate tanggal, String keterangan, double jumlah, String kategori) {
+        for (int i = 0; i < transaksiList.size(); i++) {
+            Transaksi t = transaksiList.get(i);
+            if (t.getId().equals(oldId)) {
+                Transaksi updated = t.getTipe().equalsIgnoreCase("Pemasukan")
+                        ? new Pemasukan(oldId, tanggal, keterangan, jumlah, kategori)
+                        : new Pengeluaran(oldId, tanggal, keterangan, jumlah, kategori);
+                transaksiList.set(i, updated);
+                return;
             }
         }
     }
 
-    /**
-     * Ekspor ke .pdf, sekarang menerima Formatter
-     * @param file
-     * @param formatter
-     * @throws java.lang.Exception
-     */
-    public void exportDataToPDF(File file, DecimalFormat formatter) throws Exception {
-        Document document = new Document(PageSize.A4);
-        PdfWriter.getInstance(document, new FileOutputStream(file));
-        
-        document.open();
-        document.add(new Paragraph("Laporan Data Transaksi Keuangan"));
-        document.add(new Paragraph(" "));
-        
-        PdfPTable pdfTable = new PdfPTable(4);
-        pdfTable.addCell("Tanggal");
-        pdfTable.addCell("Keterangan");
-        pdfTable.addCell("Tipe");
-        pdfTable.addCell("Jumlah");
-        
-        for (Transaksi t : listTransaksi) {
-            pdfTable.addCell(t.getTanggal().toString());
-            pdfTable.addCell(t.getKeterangan());
-            pdfTable.addCell(t.getTipe());
-            pdfTable.addCell(formatter.format(t.getJumlah())); // Format angka
-        }
-        
-        document.add(pdfTable);
-        document.close();
+    public void deleteTransaksi(String id) {
+        transaksiList.removeIf(t -> t.getId().equals(id));
     }
-    public void importData(File file) throws IOException, Exception {
-        ArrayList<Transaksi> importedList = new ArrayList<>();
+
+    private String generateNextIdForDate(LocalDate tanggal) {
+        String datePart = tanggal.toString().replaceAll("-", ""); 
+        List<Integer> numbers = transaksiList.stream()
+                .map(Transaksi::getId)
+                .filter(Objects::nonNull)
+                .filter(id -> id.endsWith("-" + datePart))
+                .map(id -> {
+                    try {
+                        String prefix = id.split("-")[0];
+                        return Integer.parseInt(prefix);
+                    } catch (Exception e) {
+                        return 0;
+                    }
+                })
+                .sorted()
+                .collect(Collectors.toList());
+
+        int next = 1;
+        if (!numbers.isEmpty()) {
+            next = numbers.get(numbers.size() - 1) + 1;
+        }
+        return String.format("%03d-%s", next, datePart);
+    }
+
+    // --- 2. Import Method (FIXED & FINAL) ---
+
+    public boolean importFromTxt(File source) {
+        transaksiList.clear(); 
+        int successCount = 0;
+        int lineCount = 0;
         
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(source))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",", 4);
-                if (parts.length < 4) continue;
-                
-                String tipe = parts[0];
-                LocalDate tanggal = LocalDate.parse(parts[1]);
-                String keterangan = parts[2];
-                double jumlah = Double.parseDouble(parts[3]);
-                
-                Transaksi t;
-                if (tipe.equals("PEMASUKAN")) {
-                    t = new Pemasukan(tanggal, keterangan, jumlah);
-                } else {
-                    t = new Pengeluaran(tanggal, keterangan, jumlah);
+            
+            // Mencari Header 'Tipe;...' secara eksplisit untuk melewati baris kosong/BOM di awal
+            boolean headerFound = false;
+            while ((line = br.readLine()) != null) {
+                lineCount++;
+                String trimmedLine = line.trim();
+                if (trimmedLine.toUpperCase().startsWith("TIPE;")) {
+                    headerFound = true;
+                    break;
                 }
-                importedList.add(t);
             }
+            
+            if (!headerFound) {
+                System.err.println("Import Gagal: Header 'Tipe;ID;Tanggal;Keterangan;Jumlah;Kategori' tidak ditemukan. Pastikan file tidak kosong dan header ada di baris pertama.");
+                transaksiList.clear(); 
+                return false;
+            }
+            
+            // Memproses data setelah header ditemukan
+            while ((line = br.readLine()) != null) {
+                lineCount++;
+                String trimmedLine = line.trim();
+                
+                if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
+                    continue; 
+                }
+                
+                String[] parts = trimmedLine.split(";"); 
+                
+                if (parts.length < 6) {
+                    System.err.println("Skip baris " + lineCount + ": Kolom kurang dari 6. Baris: " + trimmedLine);
+                    continue; 
+                }
+                
+                try {
+                    String tipe = parts[0].trim();
+                    String id = parts[1].trim();
+                    
+                    if (id.isEmpty() || id.equalsIgnoreCase("NULL")) {
+                         id = generateNextIdForDate(LocalDate.parse(parts[2].trim()));
+                    }
+                    
+                    LocalDate tanggal = LocalDate.parse(parts[2].trim());
+                    String keterangan = parts[3].trim(); 
+                    
+                    // Mengganti koma dengan titik (desimal format Indonesia ke Java) sebelum parsing
+                    double jumlah = Double.parseDouble(parts[4].trim().replace(",", ".")); 
+                    
+                    String kategori = parts[5].trim(); 
+                    
+                    Transaksi t = tipe.equalsIgnoreCase("Pemasukan")
+                            ? new Pemasukan(id, tanggal, keterangan, jumlah, kategori)
+                            : new Pengeluaran(id, tanggal, keterangan, jumlah, kategori);
+                    transaksiList.add(t);
+                    successCount++;
+                    
+                } catch (Exception parseEx) {
+                    System.err.println("Gagal parse baris " + lineCount + " (" + trimmedLine + "). Error: " + parseEx.getMessage());
+                }
+            }
+            
+            if (successCount == 0) {
+                 System.err.println("Import Gagal: Tidak ada data transaksi yang berhasil di-parse dari file.");
+                 transaksiList.clear(); 
+                 return false;
+            }
+            System.out.println("Import Berhasil: " + successCount + " transaksi dimuat.");
+            return true;
+        } catch (Exception ex) {
+            System.err.println("Import Gagal Total. Error: " + ex.getMessage());
+            ex.printStackTrace();
+            transaksiList.clear(); 
+            return false;
         }
-        
-        listTransaksi.clear();
-        listTransaksi.addAll(importedList);
+    }
+
+    // --- 3. Export Methods (FINAL & Header Included) ---
+
+    public boolean exportToTxt(File target) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(target))) {
+            // Header
+            bw.write("Tipe;ID;Tanggal;Keterangan;Jumlah;Kategori");
+            bw.newLine();
+
+            for (Transaksi t : getTransaksiList()) {
+                // Format data: Tipe;ID;Tanggal;Keterangan;Jumlah;Kategori
+                bw.write(t.getTipe() + ";" + t.getId() + ";" + t.getTanggal().toString() + ";" + 
+                        t.getKeterangan() + ";" + t.getJumlah() + ";" + t.getKategori());
+                bw.newLine();
+            }
+            return true;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean exportToCsv(File target) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(target))) {
+            bw.write("Tipe,ID,Tanggal,Keterangan,Jumlah,Kategori");
+            bw.newLine();
+            for (Transaksi t : getTransaksiList()) {
+                String csv = String.format("%s,%s,%s,\"%s\",%.2f,\"%s\"",
+                        t.getTipe(), t.getId(), t.getTanggal().toString(),
+                        t.getKeterangan().replace("\"", "\"\""), t.getJumlah(), t.getKategori().replace("\"", "\"\"")); 
+                bw.write(csv);
+                bw.newLine();
+            }
+            return true;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean exportToExcel(File target) {
+        try (Workbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Transaksi");
+            
+            CellStyle hstyle = wb.createCellStyle();
+            org.apache.poi.ss.usermodel.Font hf = wb.createFont(); 
+            hf.setBold(true);
+            hstyle.setFont(hf);
+            
+            CellStyle currencyStyle = wb.createCellStyle();
+            DataFormat format = wb.createDataFormat();
+            currencyStyle.setDataFormat(format.getFormat("Rp #,##0.00"));
+
+            String[] header = {"Tipe", "ID", "Tanggal", "Keterangan", "Kategori", "Jumlah"};
+            Row hr = sheet.createRow(0);
+            for (int i = 0; i < header.length; i++) {
+                Cell c = hr.createCell(i);
+                c.setCellValue(header[i]);
+                c.setCellStyle(hstyle);
+            }
+
+            int r = 1;
+            for (Transaksi t : getTransaksiList()) {
+                Row row = sheet.createRow(r++);
+                row.createCell(0).setCellValue(t.getTipe());
+                row.createCell(1).setCellValue(t.getId());
+                row.createCell(2).setCellValue(t.getTanggal().toString());
+                row.createCell(3).setCellValue(t.getKeterangan());
+                row.createCell(4).setCellValue(t.getKategori());
+                
+                Cell amountCell = row.createCell(5);
+                amountCell.setCellValue(t.getJumlah());
+                amountCell.setCellStyle(currencyStyle);
+            }
+
+            for (int i = 0; i < header.length; i++) sheet.autoSizeColumn(i);
+
+            try (FileOutputStream fos = new FileOutputStream(target)) {
+                wb.write(fos);
+            }
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean exportToPdf(File target) {
+        Document document = new Document();
+        try {
+            PdfWriter.getInstance(document, new FileOutputStream(target));
+            document.open();
+            
+            document.add(new Paragraph("Laporan Keuangan Pribadi", FontFactory.getFont(
+                    FontFactory.HELVETICA_BOLD, 14, com.lowagie.text.Font.NORMAL, new java.awt.Color(0, 0, 0))));
+            document.add(Chunk.NEWLINE);
+
+            PdfPTable table = new PdfPTable(6); 
+            table.setWidthPercentage(100);
+            table.setSpacingBefore(10f);
+            
+            String[] header = {"ID", "Tanggal", "Keterangan", "Kategori", "Tipe", "Jumlah"};
+            for (String h : header) {
+                table.addCell(new Phrase(h, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8)));
+            }
+            
+            DecimalFormat df = new DecimalFormat("#,##0.00");
+
+            for (Transaksi t : getTransaksiList()) {
+                table.addCell(t.getId());
+                table.addCell(t.getTanggal().toString());
+                table.addCell(t.getKeterangan());
+                table.addCell(t.getKategori());
+                table.addCell(t.getTipe());
+                table.addCell(df.format(t.getJumlah()));
+            }
+
+            document.add(table);
+            document.close();
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return false;
+        }
     }
 }
